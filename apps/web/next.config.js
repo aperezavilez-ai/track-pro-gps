@@ -1,3 +1,5 @@
+const path = require('path')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@gps-saas/types'],
@@ -17,14 +19,22 @@ const nextConfig = {
     ],
   },
 
-  // Disable x-powered-by header
   poweredByHeader: false,
-
-  // Enable React strict mode
   reactStrictMode: true,
 
-  // Webpack config to handle Node.js modules
+  experimental: {
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
+    outputFileTracingRoot: path.join(__dirname, '../../'),
+  },
+
   webpack: (config, { isServer }) => {
+    // Force single React instance across the monorepo
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      react: path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+    }
+
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -35,11 +45,6 @@ const nextConfig = {
       }
     }
     return config
-  },
-
-  // Experimental features
-  experimental: {
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
 }
 
