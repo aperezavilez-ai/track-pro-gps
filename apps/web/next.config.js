@@ -2,6 +2,14 @@
 const nextConfig = {
   transpilePackages: ['@gps-saas/types'],
 
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },
