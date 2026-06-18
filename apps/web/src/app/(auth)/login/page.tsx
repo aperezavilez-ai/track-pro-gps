@@ -111,8 +111,11 @@ function LoginForm() {
     <div className="min-h-screen relative overflow-hidden text-white">
       {/* Fondo — autopista con flota GPS */}
       <div
-        className="absolute inset-0 bg-cover bg-center scale-105"
-        style={{ backgroundImage: 'url("/images/login-hero.png")' }}
+        className="absolute inset-0 bg-cover scale-105"
+        style={{
+          backgroundImage: 'url("/images/login-hero.png")',
+          backgroundPosition: 'center 72%',
+        }}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/50 to-slate-950/70" />
       <div className="absolute inset-0 bg-black/20" />
