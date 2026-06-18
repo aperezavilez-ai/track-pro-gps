@@ -188,7 +188,7 @@ function LoginForm() {
               </div>
 
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400 pointer-events-none z-10" />
                 <input
                   type={showPwd ? 'text' : 'password'}
                   name="trackpro-password"
@@ -197,17 +197,18 @@ function LoginForm() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Contraseña"
                   required
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   data-1p-ignore
                   data-lpignore="true"
-                  className="w-full bg-slate-800/90 border border-white/10 rounded-md pl-10 pr-10 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                  className="w-full bg-slate-800/90 border border-white/10 rounded-md pl-10 pr-12 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-orange-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
+                  aria-label={showPwd ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-md text-orange-400 hover:text-orange-300 hover:bg-white/5 transition"
                 >
-                  {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
 
