@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User, Company, Plan } from '@gps-saas/types'
-import { MEXICO_GEO_CENTER } from '@/lib/map/map-viewport'
+import { MEXICO_DASHBOARD_VIEW } from '@/lib/map/map-viewport'
 
 interface AppState {
   user: User | null
@@ -83,8 +83,8 @@ interface MapState {
 export const useMapStore = create<MapState>()((set, get) => ({
   vehicles: new Map(),
   selectedVehicleId: null,
-  mapCenter: MEXICO_GEO_CENTER,
-  mapZoom: 6,
+  mapCenter: MEXICO_DASHBOARD_VIEW.center,
+  mapZoom: MEXICO_DASHBOARD_VIEW.zoom,
   filter: 'all',
   groupFilter: 'all',
   mapStyle: 'hybrid',

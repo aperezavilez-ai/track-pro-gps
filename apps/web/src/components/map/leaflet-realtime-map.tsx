@@ -17,8 +17,7 @@ import { MobileMapControls } from '@/components/map/mobile-map-controls'
 import type { LiveVehicle } from '@gps-saas/types'
 import {
   isInMexico,
-  MEXICO_GEO_CENTER,
-  MEXICO_DEFAULT_ZOOM,
+  MEXICO_DASHBOARD_VIEW,
 } from '@/lib/map/map-viewport'
 
 import 'leaflet/dist/leaflet.css'
@@ -112,8 +111,8 @@ export function LeafletRealtimeMap({ companyId, initialVehicles }: LeafletRealti
   return (
     <div className="relative w-full h-full min-h-[calc(100dvh-12rem)] sm:min-h-[380px] z-0">
       <MapContainer
-        center={[MEXICO_GEO_CENTER.lat, MEXICO_GEO_CENTER.lng]}
-        zoom={MEXICO_DEFAULT_ZOOM}
+        center={[MEXICO_DASHBOARD_VIEW.center.lat, MEXICO_DASHBOARD_VIEW.center.lng]}
+        zoom={MEXICO_DASHBOARD_VIEW.zoom}
         className="w-full h-full min-h-[380px] rounded-xl"
         scrollWheelZoom
       >
@@ -212,15 +211,10 @@ export function LeafletRealtimeMap({ companyId, initialVehicles }: LeafletRealti
         } : undefined}
         onCenterFleet={() => {
           if (!mapRef.current) return
-          if (filteredVehicles.length === 0) {
-            mapRef.current.setView([MEXICO_GEO_CENTER.lat, MEXICO_GEO_CENTER.lng], MEXICO_DEFAULT_ZOOM)
-            return
-          }
-          const avg = filteredVehicles.reduce(
-            (acc, v) => ({ lat: acc.lat + v.lat, lng: acc.lng + v.lng }),
-            { lat: 0, lng: 0 },
+          mapRef.current.setView(
+            [MEXICO_DASHBOARD_VIEW.center.lat, MEXICO_DASHBOARD_VIEW.center.lng],
+            MEXICO_DASHBOARD_VIEW.zoom,
           )
-          mapRef.current.setView([avg.lat / filteredVehicles.length, avg.lng / filteredVehicles.length], 7)
         }}
         onZoomIn={() => mapRef.current?.zoomIn()}
         onZoomOut={() => mapRef.current?.zoomOut()}

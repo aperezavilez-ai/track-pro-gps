@@ -1,7 +1,16 @@
-/** Centro del noroeste de México — vista del dashboard con flota regional */
-export const MEXICO_GEO_CENTER = { lat: 27.2, lng: -109.5 }
+/** Vista fija del dashboard / mapa en vivo — México completo (satélite) */
+export const MEXICO_DASHBOARD_CENTER = { lat: 24.0, lng: -101.2 }
+export const MEXICO_DASHBOARD_ZOOM = 5
+
+/** Alias usados por mapas en tiempo real */
+export const MEXICO_GEO_CENTER = MEXICO_DASHBOARD_CENTER
 export const MEXICO_DEFAULT_CENTER = { lat: 19.4326, lng: -99.1332 }
-export const MEXICO_DEFAULT_ZOOM = 6
+export const MEXICO_DEFAULT_ZOOM = MEXICO_DASHBOARD_ZOOM
+
+export const MEXICO_DASHBOARD_VIEW = {
+  center: MEXICO_DASHBOARD_CENTER,
+  zoom: MEXICO_DASHBOARD_ZOOM,
+} as const
 
 /** Límites territoriales de México (sin sur de EE.UU.) */
 export const MEXICO_BOUNDS = {

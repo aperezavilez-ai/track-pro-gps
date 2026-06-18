@@ -2,24 +2,25 @@
 
 import { useEffect, useRef } from 'react'
 import { useMap } from '@vis.gl/react-google-maps'
-import { MEXICO_GEO_CENTER, MEXICO_DEFAULT_ZOOM } from '@/lib/map/map-viewport'
+import { MEXICO_DASHBOARD_VIEW, MEXICO_BOUNDS } from '@/lib/map/map-viewport'
 
-/** Vista fija en México al cargar — sin fitBounds global */
+/** Vista fija en México al cargar — mismo encuadre que el dashboard */
 export function SetMexicoViewOnceGoogle() {
   const map = useMap()
   const doneRef = useRef(false)
 
   useEffect(() => {
     if (!map || doneRef.current) return
-    map.setCenter(MEXICO_GEO_CENTER)
-    map.setZoom(MEXICO_DEFAULT_ZOOM)
+
+    map.setCenter(MEXICO_DASHBOARD_VIEW.center)
+    map.setZoom(MEXICO_DASHBOARD_VIEW.zoom)
     map.setOptions({
       restriction: {
         latLngBounds: {
-          north: 33.5,
-          south: 14.0,
-          west: -119.0,
-          east: -86.0,
+          north: MEXICO_BOUNDS.north + 1,
+          south: MEXICO_BOUNDS.south - 2,
+          west: MEXICO_BOUNDS.west - 2,
+          east: MEXICO_BOUNDS.east + 2,
         },
         strictBounds: false,
       },
@@ -28,4 +29,10 @@ export function SetMexicoViewOnceGoogle() {
   }, [map])
 
   return null
+}
+
+/** Reaplica la vista México (p. ej. al quitar selección de vehículo) */
+export function resetGoogleMapToMexico(map: google.maps.Map) {
+  map.setCenter(MEXICO_DASHBOARD_VIEW.center)
+  map.setZoom(MEXICO_DASHBOARD_VIEW.zoom)
 }

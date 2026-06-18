@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import {
   APIProvider,
@@ -24,9 +24,9 @@ import { reverseGeocodeLatLng } from '@/lib/map/reverse-geocode'
 import { MobileMapControls } from '@/components/map/mobile-map-controls'
 import {
   isInMexico,
-  MEXICO_GEO_CENTER,
-  MEXICO_DEFAULT_ZOOM,
+  MEXICO_DASHBOARD_VIEW,
 } from '@/lib/map/map-viewport'
+import { SetMexicoViewOnceGoogle } from '@/components/map/set-mexico-view-once-google'
 import type { LiveVehicle } from '@gps-saas/types'
 
 const LeafletRealtimeMap = dynamic(
@@ -96,9 +96,10 @@ function GoogleMapContent({
   } = useMapStore()
 
   const [camera, setCamera] = useState({
-    center: MEXICO_GEO_CENTER,
-    zoom: MEXICO_DEFAULT_ZOOM,
+    center: MEXICO_DASHBOARD_VIEW.center,
+    zoom: MEXICO_DASHBOARD_VIEW.zoom,
   })
+  const prevSelectedRef = useRef<string | null>(null)
   const [showDetailPanel, setShowDetailPanel] = useState(false)
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null)
   const [addressLoading, setAddressLoading] = useState(false)
@@ -186,10 +187,21 @@ function GoogleMapContent({
     })
   }, [selectedVehicleId, selectedVehicle?.lat, selectedVehicle?.lng, mapZoom, selectedVehicle])
 
+  // Al quitar selección, volver a la vista México del dashboard
+  useEffect(() => {
+    if (prevSelectedRef.current && !selectedVehicleId) {
+      setCamera({
+        center: MEXICO_DASHBOARD_VIEW.center,
+        zoom: MEXICO_DASHBOARD_VIEW.zoom,
+      })
+    }
+    prevSelectedRef.current = selectedVehicleId
+  }, [selectedVehicleId])
+
   useEffect(() => {
     const isMexicoDefault =
-      Math.abs(mapCenter.lat - MEXICO_GEO_CENTER.lat) < 0.01 &&
-      Math.abs(mapCenter.lng - MEXICO_GEO_CENTER.lng) < 0.01
+      Math.abs(mapCenter.lat - MEXICO_DASHBOARD_VIEW.center.lat) < 0.01 &&
+      Math.abs(mapCenter.lng - MEXICO_DASHBOARD_VIEW.center.lng) < 0.01
     if (!isMexicoDefault) {
       setCamera({ center: mapCenter, zoom: mapZoom })
     }
@@ -208,19 +220,11 @@ function GoogleMapContent({
   }, [selectedVehicle, camera.zoom])
 
   const centerFleet = useCallback(() => {
-    if (filteredVehicles.length === 0) {
-      setCamera({ center: MEXICO_GEO_CENTER, zoom: MEXICO_DEFAULT_ZOOM })
-      return
-    }
-    const avg = filteredVehicles.reduce(
-      (acc, v) => ({ lat: acc.lat + v.lat, lng: acc.lng + v.lng }),
-      { lat: 0, lng: 0 },
-    )
     setCamera({
-      center: { lat: avg.lat / filteredVehicles.length, lng: avg.lng / filteredVehicles.length },
-      zoom: 7,
+      center: MEXICO_DASHBOARD_VIEW.center,
+      zoom: MEXICO_DASHBOARD_VIEW.zoom,
     })
-  }, [filteredVehicles])
+  }, [])
 
   return (
     <div className="relative w-full h-full min-h-[calc(100dvh-12rem)] sm:min-h-[380px]">
@@ -243,6 +247,7 @@ function GoogleMapContent({
           if (err) onError()
         }}
       >
+        <SetMexicoViewOnceGoogle />
         <GoogleVehicleTrackLayer vehicleId={selectedVehicleId} />
 
         {filteredVehicles.map((vehicle) => {
