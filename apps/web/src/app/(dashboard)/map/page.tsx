@@ -4,6 +4,7 @@ import { RealtimeMap } from '@/components/map/realtime-map'
 import { MapFilters } from '@/components/map/map-filters'
 import { DEMO_ALERTS, DEMO_VEHICLES, isDemoTourActive } from '@/lib/demo-data'
 import type { LiveVehicle } from '@gps-saas/types'
+import { SSR_POSITION_LIMIT } from '@/lib/constants/limits'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,8 +40,8 @@ export default async function MapPage() {
     `)
 
     const { data: positions } = profile.company_id
-      ? await positionsQuery.eq('company_id', profile.company_id)
-      : await positionsQuery
+      ? await positionsQuery.eq('company_id', profile.company_id).limit(SSR_POSITION_LIMIT)
+      : await positionsQuery.limit(SSR_POSITION_LIMIT)
     const alertsQuery = supabase
       .from('alerts')
       .select('*', { count: 'exact', head: true })

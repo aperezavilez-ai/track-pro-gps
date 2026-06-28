@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { isSuperAdmin } from '@/lib/auth/scope'
+import { assertPlanFeature } from '@/lib/billing/plan-guard'
 import { reportResponse } from '@/lib/reports/export-report'
 
 async function resolveVehicleIds(
@@ -61,6 +62,11 @@ export async function GET(request: NextRequest) {
 
   const { data: profile } = await supabase.from('users').select('company_id, role').eq('id', user.id).single()
   if (!profile) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  if (profile.company_id) {
+    const planGate = await assertPlanFeature(supabase, profile.company_id, profile.role, 'reports')
+    if (planGate) return planGate
+  }
 
   const superAdmin = isSuperAdmin(profile)
   const companyId  = superAdmin ? (filterCompany || null) : profile.company_id

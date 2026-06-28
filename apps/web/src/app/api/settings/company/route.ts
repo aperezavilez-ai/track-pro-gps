@@ -3,11 +3,12 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from '@/lib/s
 import { z } from 'zod'
 
 const CompanyUpdateSchema = z.object({
-  name:    z.string().min(2).max(150),
-  rfc:     z.string().max(15).nullable().optional(),
-  phone:   z.string().max(20).nullable().optional(),
-  email:   z.string().email(),
-  address: z.string().max(500).nullable().optional(),
+  name:     z.string().min(2).max(150),
+  rfc:      z.string().max(15).nullable().optional(),
+  phone:    z.string().max(20).nullable().optional(),
+  email:    z.string().email(),
+  address:  z.string().max(500).nullable().optional(),
+  logo_url: z.union([z.string().url().max(500), z.literal('')]).nullable().optional(),
 })
 
 export async function PATCH(request: NextRequest) {
@@ -24,9 +25,14 @@ export async function PATCH(request: NextRequest) {
   const parsed = CompanyUpdateSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'Validation error', details: parsed.error.flatten() }, { status: 422 })
 
+  const payload = {
+    ...parsed.data,
+    logo_url: parsed.data.logo_url === '' ? null : (parsed.data.logo_url ?? undefined),
+  }
+
   const { data, error } = await supabase
     .from('companies')
-    .update(parsed.data)
+    .update(payload)
     .eq('id', profile.company_id)
     .select().single()
 

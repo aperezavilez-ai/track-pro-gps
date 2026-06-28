@@ -4,6 +4,7 @@ import { getApiUser } from '@/lib/auth/get-api-user'
 import { MobileTelemetrySchema } from '@/lib/mobile/schemas'
 import { resolveMobileDevice } from '@/lib/mobile/device-registry'
 import { processMobileTelemetry } from '@/lib/mobile/telemetry-processor'
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
 
 export async function POST(request: NextRequest) {
   const auth = await getApiUser(request)
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest) {
   if (!profile?.company_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const rl = checkRateLimit(`mobile-telemetry:${user.id}`, 120, 60 * 1000)
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec)
 
   const body = await request.json()
   const parsed = MobileTelemetrySchema.safeParse(body)

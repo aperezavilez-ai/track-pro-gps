@@ -95,6 +95,7 @@ function CompanySettings({ profile, onSave }: { profile: Profile | null; onSave:
     phone:   company?.phone ?? '',
     email:   company?.email ?? '',
     address: company?.address ?? '',
+    logo_url: (company as { logo_url?: string | null })?.logo_url ?? '',
   })
   const set = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }))
 
@@ -114,6 +115,7 @@ function CompanySettings({ profile, onSave }: { profile: Profile | null; onSave:
       <h2 className="text-base font-semibold text-gray-900">Datos de la empresa</h2>
       {[
         { label: 'Nombre de la empresa', field: 'name', type: 'text', required: true },
+        { label: 'Logo (URL HTTPS)', field: 'logo_url', type: 'url', placeholder: 'https://...' },
         { label: 'RFC', field: 'rfc', type: 'text' },
         { label: 'Teléfono', field: 'phone', type: 'tel' },
         { label: 'Correo de contacto', field: 'email', type: 'email', required: true },

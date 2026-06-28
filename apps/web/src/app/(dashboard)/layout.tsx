@@ -13,6 +13,7 @@ import { PushNotificationSetup } from '@/components/pwa/push-notification-setup'
 import { PwaBootstrap } from '@/components/pwa/pwa-bootstrap'
 import { AIAssistantProvider } from '@/components/ai/ai-assistant-provider'
 import { PermissionsProvider } from '@/lib/context/permissions-context'
+import { AlertsRealtimeProvider } from '@/lib/context/alerts-realtime-context'
 import { ExplorationProvider } from '@/lib/context/exploration-context'
 import { DemoTour } from '@/components/onboarding/demo-tour'
 import { Suspense } from 'react'
@@ -86,7 +87,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const accountPhase = getAccountPhase(accountInput)
 
   return (
-    <PermissionsProvider role={profile.role}>
+    <PermissionsProvider role={profile.role} companyId={profile.company_id}>
+    <AlertsRealtimeProvider companyId={profile.company_id ?? ''}>
     <ExplorationProvider isDemoTour={demoTour}>
     <AIAssistantProvider>
       <PwaBootstrap />
@@ -111,6 +113,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </div>
     </AIAssistantProvider>
     </ExplorationProvider>
+    </AlertsRealtimeProvider>
     </PermissionsProvider>
   )
 }

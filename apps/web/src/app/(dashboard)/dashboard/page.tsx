@@ -13,6 +13,7 @@ import { ToastContainer } from '@/components/ui/toast'
 import { DEMO_MODE, DEMO_STATS, DEMO_VEHICLES, DEMO_ALERTS, isDemoTourActive } from '@/lib/demo-data'
 import { emptyDashboardStats } from '@/lib/auth/company-scope'
 import type { DashboardStats as DashboardStatsType, LiveVehicle } from '@gps-saas/types'
+import { SSR_POSITION_LIMIT } from '@/lib/constants/limits'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -35,7 +36,7 @@ async function getDashboardData(companyId: string) {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  positionsQuery = positionsQuery.eq('company_id', companyId)
+  positionsQuery = positionsQuery.eq('company_id', companyId).limit(SSR_POSITION_LIMIT)
   alertsQuery = alertsQuery.eq('company_id', companyId)
 
   const [positionsResult, alertsResult, kmTodayResult, kmMonthResult] = await Promise.all([

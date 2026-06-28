@@ -3,6 +3,7 @@ import { createSupabaseServiceClient } from '@/lib/supabase/server'
 import { getApiUser } from '@/lib/auth/get-api-user'
 import { MobileRegisterSchema } from '@/lib/mobile/schemas'
 import { registerOrUpdateMobileDevice } from '@/lib/mobile/device-registry'
+import { assertPlanFeature } from '@/lib/billing/plan-guard'
 
 export async function POST(request: NextRequest) {
   const auth = await getApiUser(request)
@@ -18,6 +19,9 @@ export async function POST(request: NextRequest) {
   if (!profile?.company_id) {
     return NextResponse.json({ error: 'Usuario sin empresa asignada' }, { status: 403 })
   }
+
+  const planGate = await assertPlanFeature(supabase, profile.company_id, profile.role, 'mobile_app')
+  if (planGate) return planGate
 
   const body = await request.json()
   const parsed = MobileRegisterSchema.safeParse(body)

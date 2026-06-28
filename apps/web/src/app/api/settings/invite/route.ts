@@ -4,6 +4,7 @@ import { setUserGroupAccess } from '@/lib/auth/group-access'
 import { sendInvitationEmail } from '@/lib/email/send-invitation'
 import { ensurePlatformInternalCompany, isInternalTeamRole } from '@/lib/auth/platform-team'
 import { ACTIVATE_ACCOUNT_PATH, getAuthCallbackUrl } from '@/lib/auth/access-links'
+import { assertUserLimit } from '@/lib/billing/plan-guard'
 import { z } from 'zod'
 
 const InviteSchema = z.object({
@@ -112,6 +113,12 @@ export async function POST(request: NextRequest) {
   } else if (!targetCompanyId) {
     return NextResponse.json({ error: 'Tu cuenta no tiene empresa asignada' }, { status: 422 })
   }
+
+  if (targetCompanyId && role !== 'super_admin') {
+    const limitErr = await assertUserLimit(serviceClient, targetCompanyId, profile.role)
+    if (limitErr) return limitErr
+  }
+
   const redirectTo = getAuthCallbackUrl(ACTIVATE_ACCOUNT_PATH)
 
   let invitedUserId: string | null = null

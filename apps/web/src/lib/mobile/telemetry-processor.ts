@@ -22,6 +22,11 @@ export async function processMobileTelemetry(
   const cacheKey = device.vehicleId
 
   for (const pt of points) {
+    if (pt.mock_location === true) {
+      skipped++
+      continue
+    }
+
     const recordedAt = new Date(pt.recorded_at)
     if (Number.isNaN(recordedAt.getTime())) {
       skipped++

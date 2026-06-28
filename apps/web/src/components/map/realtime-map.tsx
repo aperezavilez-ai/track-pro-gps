@@ -28,6 +28,7 @@ import {
 } from '@/lib/map/map-viewport'
 import { SetMexicoViewOnceGoogle } from '@/components/map/set-mexico-view-once-google'
 import type { LiveVehicle } from '@gps-saas/types'
+import { GOOGLE_MAPS_MAX_VEHICLES } from '@/lib/constants/limits'
 
 const LeafletRealtimeMap = dynamic(
   () => import('./leaflet-realtime-map').then(m => m.LeafletRealtimeMap),
@@ -59,8 +60,8 @@ export function RealtimeMap({ companyId, initialVehicles }: RealtimeMapProps) {
     }
   }, [])
 
-  // OpenStreetMap por defecto — funciona sin restricciones de dominio en Google
-  if (!USE_GOOGLE || !apiKey || mapError) {
+  // OpenStreetMap por defecto — Leaflet cluster escala mejor en flotas grandes
+  if (!USE_GOOGLE || !apiKey || mapError || initialVehicles.length > GOOGLE_MAPS_MAX_VEHICLES) {
     return <LeafletRealtimeMap companyId={companyId} initialVehicles={initialVehicles} />
   }
 

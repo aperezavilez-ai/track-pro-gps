@@ -27,7 +27,7 @@ Dispositivo Teltonika
          │
          ▼
 ┌─────────────────┐
-│  GPS Worker     │  concurrency: 10
+│  GPS Worker     │  concurrency: 30
 │  - IMEI lookup  │
 │  - Upsert pos   │
 │  - Insert hist  │
@@ -36,7 +36,7 @@ Dispositivo Teltonika
          │
          ▼
 ┌─────────────────┐
-│  Alert Worker   │  concurrency: 20
+│  Alert Worker   │  concurrency: 40
 │  - Speed check  │
 │  - Geofence     │
 │  - Ignition     │
@@ -45,7 +45,7 @@ Dispositivo Teltonika
          │
          ▼
 ┌─────────────────┐
-│  Notif Worker   │  concurrency: 5
+│  Notif Worker   │  concurrency: 10
 │  → Edge Func    │
 │    Email/WA/FCM │
 └─────────────────┘

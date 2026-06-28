@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createSupabaseServiceClient } from '../lib/supabase.js'
+import { LruCache } from '../lib/lru-cache.js'
 import { sendAlertNotifications } from '../notifications/send-alert.js'
 import type { AlertCheckJob, NotificationJob, Queues } from '../queue/queues.js'
 
@@ -11,7 +12,7 @@ type AlertRule = {
   vehicle_ids: string[] | null
 }
 
-const rulesCache = new Map<string, { rules: AlertRule[]; cachedAt: number }>()
+const rulesCache = new LruCache<string, { rules: AlertRule[]; cachedAt: number }>(500)
 const RULES_CACHE_TTL_MS = 3 * 60 * 1000
 
 async function getRulesForVehicle(

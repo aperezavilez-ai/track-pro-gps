@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { assertNotDemoTour } from '@/lib/api/demo-guard'
+import { buildIlikeOr } from '@/lib/security/sanitize-search'
 import { z } from 'zod'
 
 const CreateVehicleSchema = z.object({
@@ -48,9 +49,11 @@ export async function GET(request: NextRequest) {
     .range(offset, offset + perPage - 1)
 
   if (search) {
-    query = query.or(
-      `economic_num.ilike.%${search}%,plates.ilike.%${search}%,brand.ilike.%${search}%,model.ilike.%${search}%`
+    const orFilter = buildIlikeOr(
+      ['economic_num', 'plates', 'brand', 'model'],
+      search,
     )
+    if (orFilter) query = query.or(orFilter)
   }
 
   if (status) {

@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { X, CheckCircle, AlertTriangle, Info, XCircle } from 'lucide-react'
-import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { useRealtimeAlerts } from '@/lib/hooks/use-realtime'
+import { useAlertsRealtime } from '@/lib/context/alerts-realtime-context'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -60,7 +59,7 @@ export function ToastContainer({ companyId }: ToastContainerProps) {
   }, [push])
 
   // Show toast on new alert
-  useRealtimeAlerts(companyId ?? '', (alert: unknown) => {
+  useAlertsRealtime((alert: unknown) => {
     const a = alert as { title: string; severity: string; message: string }
     push({
       id:      Math.random().toString(36).slice(2),

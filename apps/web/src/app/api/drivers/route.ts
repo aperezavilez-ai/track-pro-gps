@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { canWriteFleet } from '@/lib/auth/permissions'
+import { buildIlikeOr } from '@/lib/security/sanitize-search'
 import { z } from 'zod'
 
 const DriverSchema = z.object({
@@ -30,7 +31,10 @@ export async function GET(request: NextRequest) {
     .order('full_name')
     .range(offset, offset + limit - 1)
 
-  if (search) query = query.or(`full_name.ilike.%${search}%,license_num.ilike.%${search}%`)
+  if (search) {
+    const orFilter = buildIlikeOr(['full_name', 'license_num'], search)
+    if (orFilter) query = query.or(orFilter)
+  }
 
   const { data, count, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

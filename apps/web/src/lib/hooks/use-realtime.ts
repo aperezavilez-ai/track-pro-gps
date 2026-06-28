@@ -6,12 +6,11 @@ import { useMapStore } from '@/lib/stores/app-store'
 import type { VehiclePosition } from '@gps-saas/types'
 
 const IS_DEMO = process.env['NEXT_PUBLIC_DEMO_MODE'] === 'true'
+const BATCH_INTERVAL_MS = 1000
+const supabase = createSupabaseBrowserClient()
 
 /** Batch realtime updates — 1 render per second max at 500 devices */
-const BATCH_INTERVAL_MS = 1000
-
 export function useRealtimeVehicles(companyId: string) {
-  const supabase = createSupabaseBrowserClient()
   const updateVehiclesBatch = useMapStore((s) => s.updateVehiclesBatch)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const pendingRef = useRef(new Map<string, {
@@ -71,18 +70,18 @@ export function useRealtimeVehicles(companyId: string) {
         void supabase.removeChannel(channelRef.current)
       }
     }
-  }, [companyId, supabase, updateVehiclesBatch])
+  }, [companyId, updateVehiclesBatch])
 }
 
+/** @deprecated Usar useAlertsRealtime del AlertsRealtimeProvider */
 export function useRealtimeAlerts(companyId: string, onAlert?: (alert: unknown) => void) {
-  const supabase = createSupabaseBrowserClient()
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   useEffect(() => {
-    if (!companyId || IS_DEMO) return
+    if (!companyId || IS_DEMO || !onAlert) return
 
     const channel = supabase
-      .channel(`alerts:${companyId}`)
+      .channel(`alerts_legacy:${companyId}`)
       .on(
         'postgres_changes',
         {
@@ -92,7 +91,7 @@ export function useRealtimeAlerts(companyId: string, onAlert?: (alert: unknown) 
           filter: `company_id=eq.${companyId}`,
         },
         (payload) => {
-          onAlert?.(payload.new)
+          onAlert(payload.new)
         }
       )
       .subscribe()
@@ -104,5 +103,5 @@ export function useRealtimeAlerts(companyId: string, onAlert?: (alert: unknown) 
         void supabase.removeChannel(channelRef.current)
       }
     }
-  }, [companyId, supabase, onAlert])
+  }, [companyId, onAlert])
 }

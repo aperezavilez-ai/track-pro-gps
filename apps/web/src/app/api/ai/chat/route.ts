@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { sanitizeIlikeSearch } from '@/lib/security/sanitize-search'
 
 const anthropic = new Anthropic({
   apiKey: process.env['ANTHROPIC_API_KEY'],
@@ -179,7 +180,8 @@ export async function POST(request: NextRequest) {
       }
 
       case 'get_vehicle_location': {
-        const id = input.identifier?.toUpperCase() ?? ''
+        const id = sanitizeIlikeSearch(input.identifier ?? '', 30)
+        if (!id) return 'Identificador de vehículo inválido.'
         const { data } = await supabase
           .from('vehicle_positions')
           .select(`

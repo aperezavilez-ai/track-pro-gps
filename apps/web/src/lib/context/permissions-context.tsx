@@ -13,6 +13,7 @@ import {
 
 interface Permissions {
   role: string
+  companyId: string | null
   canWriteFleet: boolean
   canCommandDevices: boolean
   canManageUsers: boolean
@@ -24,6 +25,7 @@ interface Permissions {
 
 const PermissionsContext = createContext<Permissions>({
   role: 'operador',
+  companyId: null,
   canWriteFleet: false,
   canCommandDevices: false,
   canManageUsers: false,
@@ -33,9 +35,18 @@ const PermissionsContext = createContext<Permissions>({
   isReadOnly: false,
 })
 
-export function PermissionsProvider({ role, children }: { role: string; children: React.ReactNode }) {
+export function PermissionsProvider({
+  role,
+  companyId = null,
+  children,
+}: {
+  role: string
+  companyId?: string | null
+  children: React.ReactNode
+}) {
   const value = useMemo(() => ({
     role,
+    companyId,
     canWriteFleet: canWriteFleet(role),
     canCommandDevices: canCommandDevices(role),
     canManageUsers: canManageUsers(role),
@@ -43,7 +54,7 @@ export function PermissionsProvider({ role, children }: { role: string; children
     canManageGroups: canManageGroups(role),
     canAcknowledgeAlerts: canAcknowledgeAlerts(role),
     isReadOnly: isReadOnlyRole(role),
-  }), [role])
+  }), [role, companyId])
 
   return (
     <PermissionsContext.Provider value={value}>

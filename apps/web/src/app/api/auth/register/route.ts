@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createSupabaseServiceClient } from '@/lib/supabase/server'
 import { resolvePlanId } from '@/lib/billing/resolve-plan'
 import { resendFromNoreply } from '@/lib/email/resend-from'
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import { z } from 'zod'
 
 const RegisterSchema = z.object({
@@ -17,6 +18,10 @@ const RegisterSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const rl = checkRateLimit(`register:${ip}`, 5, 60 * 60 * 1000)
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterSec)
+
   const body = await request.json()
   const parsed = RegisterSchema.safeParse(body)
   if (!parsed.success) {
@@ -62,7 +67,7 @@ export async function POST(request: NextRequest) {
     plan_id:       plan.id,
     status:        'demo' as const,
     account_type:  accountType,
-    trial_ends_at: null,
+    trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     settings,
   }
 

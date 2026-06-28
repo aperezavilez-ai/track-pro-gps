@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { AlertTriangle, Zap, MapPin, Gauge } from 'lucide-react'
-import { useRealtimeAlerts } from '@/lib/hooks/use-realtime'
+import { useAlertsRealtime } from '@/lib/context/alerts-realtime-context'
 import type { Alert } from '@gps-saas/types'
 
 interface AlertsFeedProps {
@@ -31,7 +31,7 @@ export function AlertsFeed({ initialAlerts, companyId }: AlertsFeedProps) {
   const [alerts, setAlerts] = useState<Alert[]>(initialAlerts)
 
   // Subscribe to new alerts in realtime
-  useRealtimeAlerts(companyId, (newAlert) => {
+  useAlertsRealtime((newAlert) => {
     setAlerts((prev) => [newAlert as Alert, ...prev].slice(0, 50))
   })
 

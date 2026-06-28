@@ -1,17 +1,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { TeltonikaRecord } from '@gps-saas/types'
 import { createSupabaseServiceClient } from '../lib/supabase.js'
+import { LruCache } from '../lib/lru-cache.js'
 import type { AlertCheckJob, GpsPositionJob, Queues } from '../queue/queues.js'
 import { processAlertCheck } from './process-alert-check.js'
 
-const deviceCache = new Map<string, {
+const deviceCache = new LruCache<string, {
   vehicleId: string
   companyId: string
   deviceId: string
   maxSpeed: number
   prevIgnition: boolean
   cachedAt: number
-}>()
+}>(5000)
 
 const CACHE_TTL_MS = 5 * 60 * 1000
 
@@ -23,7 +24,8 @@ export async function processGpsPosition(
   const { imei, records, receivedAt } = data
   const device = await lookupDevice(supabase, imei)
   if (!device) {
-    console.warn(`[GPS Worker] Unknown IMEI: ${imei} — skipping`)
+    const masked = imei.length > 4 ? `***${imei.slice(-4)}` : '****'
+    console.warn(`[GPS Worker] Unknown IMEI: ${masked} — skipping`)
     return
   }
 

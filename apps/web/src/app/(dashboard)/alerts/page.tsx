@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { AlertTriangle, Gauge, MapPin, Zap, CheckCircle, Filter } from 'lucide-react'
-import { useRealtimeAlerts } from '@/lib/hooks/use-realtime'
+import { useAlertsRealtime } from '@/lib/context/alerts-realtime-context'
 import { usePermissions } from '@/lib/context/permissions-context'
 import type { Alert } from '@gps-saas/types'
 
@@ -33,14 +33,13 @@ interface AlertWithVehicle extends Alert {
 }
 
 export default function AlertsPage() {
-  const { canAcknowledgeAlerts } = usePermissions()
+  const { canAcknowledgeAlerts, companyId } = usePermissions()
   const [alerts, setAlerts]         = useState<AlertWithVehicle[]>([])
   const [total, setTotal]           = useState(0)
   const [loading, setLoading]       = useState(true)
   const [selected, setSelected]     = useState<Set<string>>(new Set())
   const [filter, setFilter]         = useState({ severity: '', type: '', unackOnly: true })
   const [page, setPage]             = useState(1)
-  const [companyId, setCompanyId]   = useState('')
 
   async function fetchAlerts(p = 1) {
     setLoading(true)
@@ -56,7 +55,7 @@ export default function AlertsPage() {
   }
 
   useEffect(() => { void fetchAlerts(page) }, [page, filter])
-  useRealtimeAlerts(companyId, (newAlert) => {
+  useAlertsRealtime((newAlert) => {
     setAlerts(prev => [newAlert as AlertWithVehicle, ...prev])
     setTotal(t => t + 1)
   })
