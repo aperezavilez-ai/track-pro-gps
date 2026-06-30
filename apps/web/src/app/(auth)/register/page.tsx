@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, CheckCircle, User, Building2 } from 'lucide-react'
 import { TrackProLogo } from '@/components/brand/trackpro-logo'
 import { REGISTER_ACCOUNT_TYPES } from '@/lib/account-types'
 import { PublicPricingPlans } from '@/components/auth/public-pricing-plans'
 import { AuthLegalFooter } from '@/components/layout/auth-legal-footer'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { AccountType } from '@gps-saas/types'
 
 const TYPE_ICONS = {
@@ -28,10 +29,12 @@ export default function RegisterPage() {
 }
 
 function RegisterForm() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const fromPwa = searchParams.get('from') === 'pwa'
   const installed = searchParams.get('installed') === '1'
 
+  const [checkingSession, setCheckingSession] = useState(fromPwa || installed)
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -53,6 +56,19 @@ function RegisterForm() {
   const [hasPendingCheckout, setHasPendingCheckout] = useState(false)
 
   const accountConfig = REGISTER_ACCOUNT_TYPES.find(t => t.value === accountType)!
+
+  useEffect(() => {
+    if (!fromPwa && !installed) return
+
+    const supabase = createSupabaseBrowserClient()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.replace('/dashboard')
+        return
+      }
+      setCheckingSession(false)
+    }).catch(() => setCheckingSession(false))
+  }, [fromPwa, installed, router])
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
@@ -121,6 +137,14 @@ function RegisterForm() {
             Ir al login
           </Link>
         </div>
+      </div>
+    )
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-white animate-spin" />
       </div>
     )
   }

@@ -12,6 +12,7 @@ import { DesktopInstallGuide } from '@/components/pwa/desktop-install-guide'
 import { AndroidInstallGuide } from '@/components/pwa/android-install-guide'
 import { AuthLegalFooter } from '@/components/layout/auth-legal-footer'
 import { MobilePermissionSetup } from '@/components/mobile/mobile-permission-setup'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>
@@ -46,8 +47,10 @@ export default function DescargarPageClient() {
     setDone(true)
     setInstalling(false)
     localStorage.setItem('trackpro_pwa_installed', '1')
-    setTimeout(() => {
-      router.push('/register?from=pwa&installed=1')
+    setTimeout(async () => {
+      const supabase = createSupabaseBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      router.push(session ? '/dashboard' : '/register?from=pwa&installed=1')
     }, 1500)
   }, [router])
 
