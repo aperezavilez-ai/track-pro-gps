@@ -233,16 +233,21 @@ function GoogleMapContent({
   }, [])
 
   return (
-    <div className="relative w-full h-full min-h-0 lg:min-h-[380px]">
+    <div className="flex h-full min-h-0 w-full flex-col lg:min-h-[380px]">
+      <div className="relative min-h-0 flex-1">
       <Map
         center={camera.center}
         zoom={camera.zoom}
         mapTypeId={mapStyle === 'streets' ? 'roadmap' : mapStyle}
         {...(mapId ? { mapId } : {})}
         gestureHandling="greedy"
-        disableDefaultUI={false}
-        mapTypeControl
-        mapTypeControlOptions={{ mapTypeIds: ['hybrid', 'satellite', 'roadmap'] }}
+        disableDefaultUI
+        mapTypeControl={false}
+        zoomControl={false}
+        fullscreenControl={false}
+        streetViewControl={false}
+        rotateControl={false}
+        scaleControl={false}
         styles={FLEET_MAP_STYLES}
         onCameraChanged={(ev) => {
           const { center, zoom } = ev.detail
@@ -295,15 +300,6 @@ function GoogleMapContent({
         })}
 
       </Map>
-
-      <MobileMapControls
-        mapStyle={mapStyle}
-        onChangeStyle={setMapStyle}
-        onCenterSelected={selectedVehicle ? centerSelectedVehicle : undefined}
-        onCenterFleet={centerFleet}
-        onZoomIn={() => setCamera((prev) => ({ ...prev, zoom: Math.min(20, prev.zoom + 1) }))}
-        onZoomOut={() => setCamera((prev) => ({ ...prev, zoom: Math.max(4, prev.zoom - 1) }))}
-      />
 
       {selectedVehicle && showDetailPanel && (
         <div className="fixed inset-x-0 bottom-16 lg:absolute lg:inset-x-auto lg:bottom-4 lg:right-4 z-[1000] pointer-events-auto px-3 lg:px-0 flex justify-center lg:justify-end">
@@ -375,11 +371,6 @@ function GoogleMapContent({
         </div>
       )}
 
-      <div className="absolute top-14 lg:top-4 left-4 bg-white/90 backdrop-blur rounded-lg shadow-md px-3 py-1.5 text-xs sm:text-sm z-10 hidden sm:block">
-        <span className="font-medium">{filteredVehicles.length}</span>
-        <span className="text-gray-500 ml-1">vehículos</span>
-      </div>
-
       {selectedVehicle && (
         <div className="absolute left-2 right-2 bottom-2 lg:left-4 lg:right-auto lg:bottom-4 z-20 pointer-events-none">
           <div className="inline-flex max-w-full items-center gap-3 bg-slate-900/85 text-white rounded-xl px-3 py-2 text-xs shadow-lg backdrop-blur">
@@ -398,6 +389,16 @@ function GoogleMapContent({
           </div>
         </div>
       )}
+      </div>
+
+      <MobileMapControls
+        mapStyle={mapStyle}
+        onChangeStyle={setMapStyle}
+        onCenterSelected={selectedVehicle ? centerSelectedVehicle : undefined}
+        onCenterFleet={centerFleet}
+        onZoomIn={() => setCamera((prev) => ({ ...prev, zoom: Math.min(20, prev.zoom + 1) }))}
+        onZoomOut={() => setCamera((prev) => ({ ...prev, zoom: Math.max(4, prev.zoom - 1) }))}
+      />
     </div>
   )
 }

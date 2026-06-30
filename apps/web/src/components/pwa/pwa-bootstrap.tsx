@@ -2,9 +2,12 @@
 
 import { useEffect } from 'react'
 import { registerServiceWorker } from '@/lib/pwa/register-sw'
+import { resumeBrowserMobileTelemetry } from '@/lib/mobile/browser-activation'
 
 export function PwaBootstrap() {
   useEffect(() => {
+    resumeBrowserMobileTelemetry()
+
     registerServiceWorker()
       .then(async (reg) => {
         if (!reg) return

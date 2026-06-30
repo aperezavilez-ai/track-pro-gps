@@ -30,9 +30,9 @@ export function MobileMapControls({
   const [showStyles, setShowStyles] = useState(false)
 
   return (
-    <div className="absolute right-3 top-20 z-[1100] flex flex-col gap-2 pointer-events-auto">
+    <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-white px-3 py-2">
       {showStyles && (
-        <div className="bg-white/95 backdrop-blur border border-gray-200 rounded-xl shadow-lg p-1.5 flex flex-col gap-1">
+        <div className="order-last flex w-full flex-wrap justify-end gap-1.5 sm:order-first sm:w-auto">
           {STYLES.map((style) => (
             <button
               key={style.id}
@@ -41,8 +41,8 @@ export function MobileMapControls({
                 onChangeStyle(style.id)
                 setShowStyles(false)
               }}
-              className={`px-2.5 py-1.5 text-xs rounded-lg text-left ${
-                mapStyle === style.id ? 'bg-orange-500 text-white' : 'text-gray-700 hover:bg-gray-100'
+              className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium ${
+                mapStyle === style.id ? 'border-orange-500 bg-orange-500 text-white' : 'border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
               {style.label}
@@ -74,7 +74,7 @@ function MapBtn({
       type="button"
       title={title}
       onClick={onClick}
-      className="w-12 h-12 rounded-2xl bg-white/95 backdrop-blur border border-gray-100 shadow-lg text-gray-700 hover:bg-white active:scale-95 transition flex items-center justify-center"
+      className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50 active:scale-95"
     >
       {icon}
     </button>

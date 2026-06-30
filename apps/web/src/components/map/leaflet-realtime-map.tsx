@@ -118,12 +118,14 @@ export function LeafletRealtimeMap({ companyId, initialVehicles }: LeafletRealti
   }, [selectedVehicleId])
 
   return (
-    <div className="relative w-full h-full min-h-0 lg:min-h-[380px] z-0">
+    <div className="flex h-full min-h-0 w-full flex-col lg:min-h-[380px]">
+      <div className="relative min-h-0 flex-1 z-0">
       <MapContainer
         center={[MEXICO_DASHBOARD_VIEW.center.lat, MEXICO_DASHBOARD_VIEW.center.lng]}
         zoom={MEXICO_DASHBOARD_VIEW.zoom}
         className="w-full h-full min-h-0 rounded-xl"
         scrollWheelZoom
+        zoomControl={false}
       >
         <ProTrackTiles style={mapStyle} />
         <SetMexicoViewOnce applyKey={fleetViewKey} />
@@ -135,11 +137,6 @@ export function LeafletRealtimeMap({ companyId, initialVehicles }: LeafletRealti
           onSelect={setSelectedVehicle}
         />
       </MapContainer>
-
-      <div className="absolute top-14 lg:top-4 left-4 bg-black/60 backdrop-blur text-white rounded-lg shadow-lg px-3 py-1.5 text-xs sm:text-sm z-[1000] pointer-events-none hidden sm:block">
-        <span className="font-semibold">{filteredVehicles.length}</span>
-        <span className="text-white/70 ml-1">vehículos</span>
-      </div>
 
       {selectedVehicle && showDetailPanel && (
         <div className="fixed inset-x-0 bottom-16 lg:absolute lg:inset-x-auto lg:bottom-4 lg:right-4 z-[1000] px-3 lg:px-0 flex justify-center lg:justify-end">
@@ -211,21 +208,6 @@ export function LeafletRealtimeMap({ companyId, initialVehicles }: LeafletRealti
         </div>
       )}
 
-      <MobileMapControls
-        mapStyle={mapStyle}
-        onChangeStyle={setMapStyle}
-        onCenterSelected={selectedVehicle ? () => {
-          if (!mapRef.current || !selectedVehicle) return
-          mapRef.current.setView([selectedVehicle.lat, selectedVehicle.lng], Math.max(mapRef.current.getZoom(), 15))
-        } : undefined}
-        onCenterFleet={() => {
-          if (mapRef.current) applyMexicoFleetViewLeaflet(mapRef.current)
-          setFleetViewKey((k) => k + 1)
-        }}
-        onZoomIn={() => mapRef.current?.zoomIn()}
-        onZoomOut={() => mapRef.current?.zoomOut()}
-      />
-
       {selectedVehicle && (
         <div className="absolute left-2 right-2 bottom-2 lg:left-4 lg:right-auto lg:bottom-4 z-[1000] pointer-events-none">
           <div className="inline-flex max-w-full items-center gap-3 bg-slate-900/85 text-white rounded-xl px-3 py-2 text-xs shadow-lg backdrop-blur">
@@ -244,6 +226,22 @@ export function LeafletRealtimeMap({ companyId, initialVehicles }: LeafletRealti
           </div>
         </div>
       )}
+      </div>
+
+      <MobileMapControls
+        mapStyle={mapStyle}
+        onChangeStyle={setMapStyle}
+        onCenterSelected={selectedVehicle ? () => {
+          if (!mapRef.current || !selectedVehicle) return
+          mapRef.current.setView([selectedVehicle.lat, selectedVehicle.lng], Math.max(mapRef.current.getZoom(), 15))
+        } : undefined}
+        onCenterFleet={() => {
+          if (mapRef.current) applyMexicoFleetViewLeaflet(mapRef.current)
+          setFleetViewKey((k) => k + 1)
+        }}
+        onZoomIn={() => mapRef.current?.zoomIn()}
+        onZoomOut={() => mapRef.current?.zoomOut()}
+      />
     </div>
   )
 }

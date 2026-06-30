@@ -1,16 +1,15 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Download, CheckCircle2, Smartphone, Monitor, Globe } from 'lucide-react'
+import { CheckCircle2, Globe, Monitor, ShieldCheck, Smartphone } from 'lucide-react'
 import { TrackProLogo } from '@/components/brand/trackpro-logo'
 import { isStandalonePwa, registerServiceWorker } from '@/lib/pwa/register-sw'
 import { getInstallPlatform, isInAppBrowser, isSafariBrowser } from '@/lib/pwa/detect-platform'
 import { IosInstallGuide } from '@/components/pwa/ios-install-guide'
 import { DesktopInstallGuide } from '@/components/pwa/desktop-install-guide'
 import { AndroidInstallGuide } from '@/components/pwa/android-install-guide'
-import { AuthLegalFooter } from '@/components/layout/auth-legal-footer'
 import { MobilePermissionSetup } from '@/components/mobile/mobile-permission-setup'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 
@@ -27,6 +26,8 @@ declare global {
 
 export default function DescargarPageClient() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const activationDeviceId = searchParams.get('device_id') ?? undefined
   const platform = getInstallPlatform()
   const isIos = platform === 'ios'
   const isAndroid = platform === 'android'
@@ -38,34 +39,57 @@ export default function DescargarPageClient() {
   const [done, setDone] = useState(false)
   const [canInstall, setCanInstall] = useState(false)
   const [installing, setInstalling] = useState(false)
+  const [standalone, setStandalone] = useState(false)
+  const [hasSession, setHasSession] = useState<boolean | null>(null)
   const [status, setStatus] = useState('')
   const deferredRef = useRef<BeforeInstallPromptEvent | null>(null)
+
+  const goToSessionRoute = useCallback(async () => {
+    const supabase = createSupabaseBrowserClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    router.push(session ? '/dashboard' : '/register?from=pwa&installed=1')
+  }, [router])
+
+  const loginHref = activationDeviceId
+    ? `/login?next=${encodeURIComponent(`/descargar?device_id=${activationDeviceId}`)}`
+    : '/login'
 
   const continueToApp = useCallback(() => {
     setDone(true)
     setInstalling(false)
     localStorage.setItem('trackpro_pwa_installed', '1')
-    setTimeout(async () => {
-      const supabase = createSupabaseBrowserClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      router.push(session ? '/dashboard' : '/register?from=pwa&installed=1')
-    }, 1500)
-  }, [router])
+    setTimeout(() => {
+      void goToSessionRoute()
+    }, 500)
+  }, [goToSessionRoute])
+
+  const continueInWeb = useCallback(async () => {
+    setInstalling(false)
+    localStorage.setItem('trackpro_web_continue', '1')
+    await goToSessionRoute()
+  }, [goToSessionRoute])
 
   const verifyIosInstall = useCallback(() => {
     if (isStandalonePwa()) {
-      continueToApp()
+      setStandalone(true)
+      setStatus('')
       return
     }
 
     setInstalling(false)
-    setStatus('Todavia estas en Safari. Despues de anadir TrackPro a pantalla de inicio, abre la app desde el icono y vuelve a tocar verificar.')
-  }, [continueToApp])
+    setStatus('Abre TrackPro desde el icono nuevo de tu pantalla de inicio.')
+  }, [])
 
   useEffect(() => {
-    void registerServiceWorker().finally(() => setReady(true))
+    const launchedStandalone = isStandalonePwa()
+    setStandalone(launchedStandalone)
 
-    if (isStandalonePwa()) {
+    void registerServiceWorker().finally(() => setReady(true))
+    void createSupabaseBrowserClient().auth.getSession()
+      .then(({ data: { session } }) => setHasSession(Boolean(session)))
+      .catch(() => setHasSession(false))
+
+    if (launchedStandalone && isDesktop) {
       continueToApp()
       return
     }
@@ -77,47 +101,56 @@ export default function DescargarPageClient() {
     }
     window.addEventListener('beforeinstallprompt', onBip)
     return () => window.removeEventListener('beforeinstallprompt', onBip)
-  }, [continueToApp])
+  }, [continueToApp, isDesktop])
 
   async function handleInstall() {
     if (!deferredRef.current) {
-      setStatus('Usa las instrucciones de abajo o el menú del navegador.')
+      setStatus('Usa el menu del navegador para instalar TrackPro.')
       return
     }
+
     setInstalling(true)
-    setStatus('Confirma la instalación en el cuadro del navegador…')
+    setStatus('Confirma la instalacion en el navegador.')
     try {
       await deferredRef.current.prompt()
       const choice = await deferredRef.current.userChoice
       if (choice.outcome === 'accepted') {
-        setStatus('¡App instalada!')
+        setStatus('App instalada.')
         continueToApp()
       } else {
         setInstalling(false)
-        setStatus('Instalación cancelada. Puedes usar TrackPro en el navegador.')
+        setStatus('Instalacion cancelada.')
       }
     } catch {
       setInstalling(false)
-      setStatus('No se pudo abrir el instalador. Sigue los pasos manuales.')
+      setStatus('No se pudo abrir el instalador.')
     }
   }
 
-  const title = isIos
-    ? 'Instalar en iPhone / iPad'
-    : isAndroid
-      ? 'Instalar en Android'
-      : 'TrackPro GPS en tu computadora'
-
-  const subtitle = isDesktop
-    ? 'No se descarga un .exe — instalas desde Chrome/Edge o usas la web directamente.'
+  const title = standalone
+    ? 'TrackPro GPS'
+    : activationDeviceId
+      ? 'Activar movil'
     : isIos
-      ? 'Añade TrackPro a tu pantalla de inicio con Safari.'
-      : 'Instala la app en tu teléfono desde Chrome.'
+      ? 'Instalar en iPhone'
+      : isAndroid
+        ? 'Instalar en Android'
+        : 'TrackPro GPS'
+
+  const subtitle = standalone
+    ? 'Autoriza el acceso para continuar.'
+    : activationDeviceId
+      ? 'Abre esta pantalla desde el telefono asignado.'
+    : isIos
+      ? 'Agregala a inicio desde Safari.'
+      : isAndroid
+        ? 'Instala o continua en el navegador.'
+        : 'Instala o continua en el navegador.'
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-md text-center space-y-6">
-        <TrackProLogo size="md" className="inline-flex mb-2" />
+      <div className="w-full max-w-md text-center space-y-5">
+        <TrackProLogo size="md" className="inline-flex" />
 
         <div>
           <h1 className="text-lg font-semibold text-white">{title}</h1>
@@ -128,12 +161,44 @@ export default function DescargarPageClient() {
           {done ? (
             <div className="text-center py-4">
               <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto mb-3" />
-              <p className="text-sm font-medium text-green-200">¡Listo! Redirigiendo…</p>
+              <p className="text-sm font-medium text-green-200">Listo. Abriendo TrackPro...</p>
             </div>
+          ) : activationDeviceId && isDesktop ? (
+            <div className="text-center">
+              <ShieldCheck className="w-10 h-10 text-orange-300 mx-auto mb-3" />
+              <p className="text-sm text-white/70">
+                Abre este enlace desde el telefono asignado para autorizar TrackPro.
+              </p>
+            </div>
+          ) : (standalone || activationDeviceId) && !isDesktop ? (
+            hasSession === null ? (
+              <p className="text-sm text-white/60 text-center py-2">Preparando...</p>
+            ) : hasSession === false ? (
+              <div className="text-center">
+                <ShieldCheck className="w-10 h-10 text-orange-300 mx-auto mb-3" />
+                <p className="text-sm text-white/70 mb-4">
+                  Inicia sesion en este telefono para autorizar TrackPro.
+                </p>
+                <Link
+                  href={loginHref}
+                  className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-400 text-white font-medium py-3 rounded-xl text-sm transition"
+                >
+                  Iniciar sesion
+                </Link>
+              </div>
+            ) : (
+              <MobilePermissionSetup
+                compact
+                deviceId={activationDeviceId}
+                title="Autorizar app"
+                description="Acepta los avisos del sistema para continuar."
+                onActivated={continueToApp}
+              />
+            )
           ) : (
             <>
               {!ready && (
-                <p className="text-sm text-white/60 text-center py-2">Preparando instalador…</p>
+                <p className="text-sm text-white/60 text-center py-2">Preparando...</p>
               )}
 
               {ready && canInstall && (
@@ -143,41 +208,22 @@ export default function DescargarPageClient() {
                   onClick={() => void handleInstall()}
                   className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-medium py-3.5 rounded-xl text-sm transition mb-4"
                 >
-                  {isDesktop ? (
-                    <Monitor className="w-5 h-5" />
-                  ) : (
-                    <Smartphone className="w-5 h-5" />
-                  )}
-                  {installing ? 'Esperando confirmación…' : 'Instalar TrackPro GPS'}
+                  {isDesktop ? <Monitor className="w-5 h-5" /> : <Smartphone className="w-5 h-5" />}
+                  {installing ? 'Esperando...' : 'Instalar TrackPro'}
                 </button>
-              )}
-
-              {status && (
-                <p className="text-xs text-orange-200/90 text-center mb-4">{status}</p>
-              )}
-
-              {ready && !isDesktop && (
-                <div className="mb-4">
-                  <MobilePermissionSetup compact />
-                </div>
               )}
 
               {ready && isIos && (
                 <>
                   <IosInstallGuide inAppBrowser={inApp || needsSafari} />
-                  <p className="mt-4 rounded-xl border border-orange-400/20 bg-orange-500/10 px-3 py-2 text-xs text-orange-100 leading-relaxed">
-                    En iPhone no se descarga ningun archivo. Primero agrega TrackPro a pantalla de inicio; despues cierra Safari y abre la app desde el icono nuevo.
-                  </p>
-                  <div className="mt-4 flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={verifyIosInstall}
-                      className="w-full flex items-center justify-center gap-2 border border-white/15 hover:bg-white/5 text-white font-medium py-3 rounded-xl text-sm transition"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      Ya abri desde el icono, verificar
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={verifyIosInstall}
+                    className="mt-4 w-full flex items-center justify-center gap-2 border border-white/15 hover:bg-white/5 text-white font-medium py-3 rounded-xl text-sm transition"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    Ya abri desde el icono
+                  </button>
                 </>
               )}
 
@@ -185,47 +231,30 @@ export default function DescargarPageClient() {
 
               {ready && isAndroid && !canInstall && <AndroidInstallGuide />}
 
+              {status && (
+                <p className="text-xs text-orange-200/90 text-center mt-4">{status}</p>
+              )}
+
               {ready && (
                 <div className="mt-5 pt-4 border-t border-white/10 flex flex-col gap-2">
-                  <Link
-                    href="/login"
+                  <button
+                    type="button"
+                    onClick={() => void continueInWeb()}
                     className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white font-medium py-3 rounded-xl text-sm transition"
                   >
                     <Globe className="w-4 h-4" />
-                    Usar en el navegador (sin instalar)
-                  </Link>
+                    Continuar en web
+                  </button>
                   <Link
                     href="/register?from=pwa"
                     className="w-full text-center text-sm text-white/50 hover:text-white/70 py-2"
                   >
-                    Crear cuenta nueva →
+                    Crear cuenta
                   </Link>
                 </div>
               )}
             </>
           )}
-        </div>
-
-        <div className="text-[11px] text-white/40 max-w-sm mx-auto space-y-1">
-          <p>
-            {isDesktop
-              ? 'Apps nativas (.exe / App Store) estarán disponibles cuando publiquemos en tiendas. Hoy el canal oficial es web + PWA.'
-              : 'TrackPro GPS funciona como app instalada (PWA) sin pasar por tiendas de aplicaciones.'}
-          </p>
-          {!isDesktop && (
-            <p>Después de instalar podrás registrarte y explorar la plataforma en modo demo.</p>
-          )}
-        </div>
-
-        {!isDesktop && !done && (
-          <p className="text-xs text-white/30 flex items-center justify-center gap-1">
-            <Download className="w-3.5 h-3.5" />
-            No descarga archivos APK/IPA desde esta página
-          </p>
-        )}
-
-        <div className="mt-8 max-w-sm mx-auto w-full">
-          <AuthLegalFooter variant="dark" supportSource="descargar" />
         </div>
       </div>
     </div>

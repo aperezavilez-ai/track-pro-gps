@@ -108,8 +108,9 @@ export default function DevicesPage() {
       {pendingMobile && (
         <MobilePermissionSetup
           deviceId={pendingMobile.id}
-          title="Activar GPS del móvil"
-          description="Abre esta pantalla desde el iPhone registrado, toca el botón y acepta ubicación para enviar la primera posición."
+          activationHref={`/descargar?device_id=${pendingMobile.id}`}
+          title="Autorizar app del movil"
+          description="Desde el telefono asignado abre el enlace de activacion y toca Autorizar app."
           onActivated={() => void loadDevices()}
         />
       )}

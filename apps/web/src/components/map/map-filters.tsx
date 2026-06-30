@@ -48,12 +48,12 @@ export function MapFilters({ activeAlerts, productivity }: MapFiltersProps) {
   }
 
   return (
-    <div className="absolute top-2 left-2 right-2 lg:top-4 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 z-10 flex flex-col items-stretch lg:items-center gap-1.5 max-w-full pointer-events-none">
+    <div className="flex w-full flex-col items-stretch gap-2 border-b border-gray-200 bg-white px-3 py-2 lg:flex-row lg:items-center lg:justify-between">
       {vehicleGroups.length > 1 && (
         <select
           value={groupFilter}
           onChange={e => setGroupFilter(e.target.value)}
-          className="pointer-events-auto bg-white border border-gray-200 rounded-xl shadow-md px-3 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-auto"
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 sm:w-auto"
         >
           <option value="all">Todos los grupos</option>
           {vehicleGroups.map(g => (
@@ -62,8 +62,8 @@ export function MapFilters({ activeAlerts, productivity }: MapFiltersProps) {
         </select>
       )}
 
-      <div className="overflow-x-auto no-scrollbar pointer-events-auto -mx-0.5 px-0.5">
-        <div className="flex items-center gap-1 bg-white rounded-xl shadow-md p-1 border border-gray-200 w-max min-w-0">
+      <div className="overflow-x-auto no-scrollbar -mx-0.5 px-0.5">
+        <div className="flex w-max min-w-0 items-center gap-1 rounded-lg border border-gray-200 bg-white p-1">
           {([
             { key: 'all' as const, label: 'Todos', icon: Layers },
             { key: 'vehicles' as const, label: 'Vehículos', icon: Truck },
@@ -85,8 +85,8 @@ export function MapFilters({ activeAlerts, productivity }: MapFiltersProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto no-scrollbar pointer-events-auto -mx-0.5 px-0.5">
-        <div className="flex items-center gap-1 bg-white rounded-xl shadow-md p-1 border border-gray-200 w-max min-w-0">
+      <div className="overflow-x-auto no-scrollbar -mx-0.5 px-0.5">
+        <div className="flex w-max min-w-0 items-center gap-1 rounded-lg border border-gray-200 bg-white p-1">
           {FILTERS.map(f => (
             <button
               key={f.key}

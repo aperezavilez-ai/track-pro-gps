@@ -12,6 +12,8 @@ const REMEMBER_KEY = 'trackpro_remember_email'
 
 function LoginForm() {
   const searchParams = useSearchParams()
+  const next = searchParams.get('next')
+  const safeNext = next?.startsWith('/') && !next.startsWith('//') ? next : null
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
@@ -84,6 +86,11 @@ function LoginForm() {
     const isDemo =
       company?.status === 'demo' ||
       company?.settings?.['demo_tour'] === true
+
+    if (safeNext) {
+      window.location.href = safeNext
+      return
+    }
 
     if (isDemo) {
       window.location.href = '/dashboard?demo_tour=1'

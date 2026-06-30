@@ -99,9 +99,11 @@ export default async function MapPage() {
     : 0
 
   return (
-    <div className="h-[calc(100dvh-3.5rem-4rem)] lg:h-full lg:min-h-0 relative bg-gray-100">
+    <div className="h-[calc(100dvh-3.5rem-4rem)] lg:h-full lg:min-h-0 bg-gray-100 flex flex-col">
       <MapFilters activeAlerts={activeAlerts} productivity={productivity} />
-      <RealtimeMap companyId={profile.company_id ?? 'demo-company-id'} initialVehicles={liveVehicles} />
+      <div className="min-h-0 flex-1">
+        <RealtimeMap companyId={profile.company_id ?? 'demo-company-id'} initialVehicles={liveVehicles} />
+      </div>
     </div>
   )
 }

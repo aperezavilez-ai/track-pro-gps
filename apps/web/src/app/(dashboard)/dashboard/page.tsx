@@ -212,14 +212,16 @@ export default async function DashboardPage() {
 
       {/* Escritorio: mapa + panel lateral */}
       <div className="hidden lg:grid lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="order-1 lg:col-span-3 bg-gray-100 rounded-2xl overflow-hidden relative min-h-[520px]">
+        <div className="order-1 lg:col-span-3 bg-gray-100 rounded-2xl overflow-hidden min-h-[520px] flex flex-col">
           <MapFilters activeAlerts={stats.active_alerts} productivity={stats.productivity_today} />
           <Suspense fallback={
             <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
               Cargando mapa...
             </div>
           }>
-            <RealtimeMap companyId={companyId ?? ''} initialVehicles={liveVehicles} />
+            <div className="min-h-0 flex-1">
+              <RealtimeMap companyId={companyId ?? ''} initialVehicles={liveVehicles} />
+            </div>
           </Suspense>
         </div>
 
