@@ -74,6 +74,16 @@ type ContactInfo = {
   emergency?: { name?: string; phone?: string; email?: string; relationship?: string }
 }
 
+type ContactDraft = {
+  responsible_name: string
+  responsible_phone: string
+  responsible_email: string
+  emergency_name: string
+  emergency_phone: string
+  emergency_email: string
+  emergency_relationship: string
+}
+
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   online:    { label: 'En línea',      color: 'text-green-600 bg-green-50 border-green-200' },
   offline:   { label: 'Desconectado',  color: 'text-gray-500 bg-gray-50 border-gray-200' },
@@ -105,6 +115,9 @@ export function DeviceDetailClient({ deviceId, canCommand, mapsApiKey = '' }: Pr
   const [loading, setLoading]     = useState(true)
   const [cmdLoading, setCmdLoading] = useState<string | null>(null)
   const [error, setError]         = useState('')
+  const [editingContacts, setEditingContacts] = useState(false)
+  const [savingContacts, setSavingContacts] = useState(false)
+  const [contactDraft, setContactDraft] = useState<ContactDraft>(() => emptyContactDraft())
 
   const load = useCallback(async () => {
     const [devRes, cmdRes] = await Promise.all([
@@ -131,6 +144,11 @@ export function DeviceDetailClient({ deviceId, canCommand, mapsApiKey = '' }: Pr
   useEffect(() => { void load() }, [load])
 
   useEffect(() => {
+    if (!device || editingContacts) return
+    setContactDraft(buildContactDraft(device))
+  }, [device, editingContacts])
+
+  useEffect(() => {
     const interval = setInterval(() => void load(), 15_000)
     return () => clearInterval(interval)
   }, [load])
@@ -152,6 +170,49 @@ export function DeviceDetailClient({ deviceId, canCommand, mapsApiKey = '' }: Pr
       setError(err instanceof Error ? err.message : 'Error')
     } finally {
       setCmdLoading(null)
+    }
+  }
+
+  async function saveContacts() {
+    const responsibleName = contactDraft.responsible_name.trim()
+    const responsiblePhone = contactDraft.responsible_phone.trim()
+    const emergencyName = contactDraft.emergency_name.trim()
+    const emergencyPhone = contactDraft.emergency_phone.trim()
+
+    if (!responsibleName || !responsiblePhone || !emergencyName || !emergencyPhone) {
+      setError('Responsable y contacto de emergencia requieren nombre y celular')
+      return
+    }
+
+    setSavingContacts(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/devices/${deviceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          responsible_contact: {
+            name: responsibleName,
+            phone: responsiblePhone,
+            email: contactDraft.responsible_email.trim() || null,
+          },
+          emergency_contacts: [{
+            name: emergencyName,
+            phone: emergencyPhone,
+            email: contactDraft.emergency_email.trim() || null,
+            relationship: contactDraft.emergency_relationship.trim() || null,
+            priority: 1,
+          }],
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Error')
+      setEditingContacts(false)
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error')
+    } finally {
+      setSavingContacts(false)
     }
   }
 
@@ -338,54 +399,92 @@ export function DeviceDetailClient({ deviceId, canCommand, mapsApiKey = '' }: Pr
             </div>
           )}
 
-          {(contactInfo.responsible || contactInfo.emergency) && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-semibold text-gray-900">Responsable y emergencia</h2>
-              {contactInfo.responsible && (
-                <div className="space-y-1 text-sm">
-                  <div className="flex items-center gap-2 font-medium text-gray-900">
-                    <User className="w-4 h-4 text-gray-400" />
-                    {contactInfo.responsible.name ?? 'Responsable'}
-                  </div>
-                  {contactInfo.responsible.phone && (
-                    <div className="flex items-center gap-2 text-gray-500">
-                      <Phone className="w-4 h-4 text-gray-300" />
-                      {contactInfo.responsible.phone}
-                    </div>
-                  )}
-                  {contactInfo.responsible.email && (
-                    <div className="flex items-center gap-2 text-gray-500 break-all">
-                      <Mail className="w-4 h-4 text-gray-300" />
-                      {contactInfo.responsible.email}
-                    </div>
-                  )}
-                </div>
-              )}
-              {contactInfo.emergency && (
-                <div className="space-y-1 text-sm pt-3 border-t border-gray-100">
-                  <div className="flex items-center gap-2 font-medium text-red-700">
-                    <AlertTriangle className="w-4 h-4 text-red-500" />
-                    {contactInfo.emergency.name ?? 'Contacto de emergencia'}
-                  </div>
-                  {contactInfo.emergency.relationship && (
-                    <div className="text-xs text-gray-400 pl-6">{contactInfo.emergency.relationship}</div>
-                  )}
-                  {contactInfo.emergency.phone && (
-                    <div className="flex items-center gap-2 text-gray-500">
-                      <Phone className="w-4 h-4 text-gray-300" />
-                      {contactInfo.emergency.phone}
-                    </div>
-                  )}
-                  {contactInfo.emergency.email && (
-                    <div className="flex items-center gap-2 text-gray-500 break-all">
-                      <Mail className="w-4 h-4 text-gray-300" />
-                      {contactInfo.emergency.email}
-                    </div>
-                  )}
-                </div>
+              {canCommand && (
+                <button
+                  type="button"
+                  onClick={() => setEditingContacts(prev => !prev)}
+                  className="text-xs font-medium text-orange-500 hover:text-orange-600"
+                >
+                  {editingContacts ? 'Cancelar' : contactInfo.responsible || contactInfo.emergency ? 'Editar' : 'Agregar'}
+                </button>
               )}
             </div>
-          )}
+
+            {editingContacts ? (
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <ContactInput label="Responsable *" value={contactDraft.responsible_name} onChange={value => setContactDraft(prev => ({ ...prev, responsible_name: value }))} />
+                  <ContactInput label="Celular responsable *" value={contactDraft.responsible_phone} onChange={value => setContactDraft(prev => ({ ...prev, responsible_phone: value }))} />
+                  <ContactInput label="Correo responsable" value={contactDraft.responsible_email} onChange={value => setContactDraft(prev => ({ ...prev, responsible_email: value }))} type="email" />
+                </div>
+                <div className="grid gap-2 pt-3 border-t border-gray-100">
+                  <ContactInput label="Contacto emergencia *" value={contactDraft.emergency_name} onChange={value => setContactDraft(prev => ({ ...prev, emergency_name: value }))} />
+                  <ContactInput label="Celular emergencia *" value={contactDraft.emergency_phone} onChange={value => setContactDraft(prev => ({ ...prev, emergency_phone: value }))} />
+                  <ContactInput label="Correo emergencia" value={contactDraft.emergency_email} onChange={value => setContactDraft(prev => ({ ...prev, emergency_email: value }))} type="email" />
+                  <ContactInput label="Relacion" value={contactDraft.emergency_relationship} onChange={value => setContactDraft(prev => ({ ...prev, emergency_relationship: value }))} />
+                </div>
+                <button
+                  type="button"
+                  disabled={savingContacts}
+                  onClick={() => void saveContacts()}
+                  className="w-full rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+                >
+                  {savingContacts ? 'Guardando...' : 'Guardar contactos'}
+                </button>
+              </div>
+            ) : contactInfo.responsible || contactInfo.emergency ? (
+              <>
+                {contactInfo.responsible && (
+                  <div className="space-y-1 text-sm">
+                    <div className="flex items-center gap-2 font-medium text-gray-900">
+                      <User className="w-4 h-4 text-gray-400" />
+                      {contactInfo.responsible.name ?? 'Responsable'}
+                    </div>
+                    {contactInfo.responsible.phone && (
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <Phone className="w-4 h-4 text-gray-300" />
+                        {contactInfo.responsible.phone}
+                      </div>
+                    )}
+                    {contactInfo.responsible.email && (
+                      <div className="flex items-center gap-2 text-gray-500 break-all">
+                        <Mail className="w-4 h-4 text-gray-300" />
+                        {contactInfo.responsible.email}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {contactInfo.emergency && (
+                  <div className="space-y-1 text-sm pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2 font-medium text-red-700">
+                      <AlertTriangle className="w-4 h-4 text-red-500" />
+                      {contactInfo.emergency.name ?? 'Contacto de emergencia'}
+                    </div>
+                    {contactInfo.emergency.relationship && (
+                      <div className="text-xs text-gray-400 pl-6">{contactInfo.emergency.relationship}</div>
+                    )}
+                    {contactInfo.emergency.phone && (
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <Phone className="w-4 h-4 text-gray-300" />
+                        {contactInfo.emergency.phone}
+                      </div>
+                    )}
+                    {contactInfo.emergency.email && (
+                      <div className="flex items-center gap-2 text-gray-500 break-all">
+                        <Mail className="w-4 h-4 text-gray-300" />
+                        {contactInfo.emergency.email}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-gray-400">Sin contactos registrados para alertas de panico.</p>
+            )}
+          </div>
 
           {/* Comandos remotos */}
           {canCommand && (
@@ -513,6 +612,31 @@ function getDeviceContactInfo(device: DeviceDetail): ContactInfo {
   }
 }
 
+function buildContactDraft(device: DeviceDetail): ContactDraft {
+  const contact = getDeviceContactInfo(device)
+  return {
+    responsible_name: contact.responsible?.name ?? '',
+    responsible_phone: contact.responsible?.phone ?? '',
+    responsible_email: contact.responsible?.email ?? '',
+    emergency_name: contact.emergency?.name ?? '',
+    emergency_phone: contact.emergency?.phone ?? '',
+    emergency_email: contact.emergency?.email ?? '',
+    emergency_relationship: contact.emergency?.relationship ?? 'Contacto de emergencia',
+  }
+}
+
+function emptyContactDraft(): ContactDraft {
+  return {
+    responsible_name: '',
+    responsible_phone: '',
+    responsible_email: '',
+    emergency_name: '',
+    emergency_phone: '',
+    emergency_email: '',
+    emergency_relationship: 'Contacto de emergencia',
+  }
+}
+
 function readContactObject(value: unknown): ContactInfo['emergency'] {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
   const contact = value as Record<string, unknown>
@@ -522,4 +646,28 @@ function readContactObject(value: unknown): ContactInfo['emergency'] {
     email: typeof contact.email === 'string' ? contact.email : undefined,
     relationship: typeof contact.relationship === 'string' ? contact.relationship : undefined,
   }
+}
+
+function ContactInput({
+  label,
+  value,
+  onChange,
+  type = 'text',
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  type?: string
+}) {
+  return (
+    <label className="grid gap-1 text-xs font-medium text-gray-500">
+      {label}
+      <input
+        value={value}
+        type={type}
+        onChange={event => onChange(event.target.value)}
+        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-normal text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+      />
+    </label>
+  )
 }
