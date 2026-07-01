@@ -19,6 +19,7 @@ type ClusterVehicle = {
   economicNum: string
   plates: string
   vehicleType?: string
+  deviceSource?: string | null
 }
 
 interface VehicleMarkerClusterProps {
@@ -73,6 +74,7 @@ export function VehicleMarkerCluster({ vehicles, selectedVehicleId, onSelect }: 
         selected,
         label: vehicle.economicNum,
         vehicleType: vehicle.vehicleType,
+        deviceSource: vehicle.deviceSource,
         ignition: vehicle.ignition,
       })
 

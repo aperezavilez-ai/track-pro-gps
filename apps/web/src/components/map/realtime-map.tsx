@@ -269,6 +269,7 @@ function GoogleMapContent({
             heading: vehicle.heading,
             selected,
             vehicleType: vehicle.vehicleType,
+            deviceSource: vehicle.deviceSource,
             ignition: vehicle.ignition,
           }
 
@@ -415,6 +416,7 @@ interface VehicleData {
   economicNum?: string
   plates?: string
   vehicleType?: string
+  deviceSource?: string | null
   groupId?: string | null
   groupName?: string | null
   ownerName?: string | null

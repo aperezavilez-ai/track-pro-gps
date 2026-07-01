@@ -1,5 +1,5 @@
 import L from 'leaflet'
-import type { VehicleType } from '@gps-saas/types'
+import type { DeviceSourceType, VehicleType } from '@gps-saas/types'
 
 /** Azul = en marcha · Naranja = detenido · Gris = apagado */
 export function getVehicleColor(speed: number, ignition: boolean) {
@@ -8,7 +8,7 @@ export function getVehicleColor(speed: number, ignition: boolean) {
   return '#F97316'
 }
 
-type VehicleIconKind = 'car' | 'suv' | 'van' | 'truck' | 'bus' | 'moto'
+type VehicleIconKind = 'car' | 'suv' | 'van' | 'truck' | 'bus' | 'moto' | 'mobile'
 
 const WHITE  = '#FFFFFF'
 const INK    = '#0F172A'
@@ -27,6 +27,14 @@ export function vehicleTypeToIconKind(type?: VehicleType | string | null): Vehic
     case 'motorcycle': return 'moto'
     default: return 'car'
   }
+}
+
+function vehicleAssetToIconKind(
+  type?: VehicleType | string | null,
+  deviceSource?: DeviceSourceType | string | null,
+): VehicleIconKind {
+  if (deviceSource === 'mobile') return 'mobile'
+  return vehicleTypeToIconKind(type)
 }
 
 function wheel(cx: number, cy: number, r = 3.8): string {
@@ -144,6 +152,23 @@ function motoSvg(statusColor: string, opacity: number, selected: boolean): strin
   `
 }
 
+function mobileSvg(statusColor: string, opacity: number, selected: boolean): string {
+  const ring = selected ? `<circle cx="24" cy="22" r="22" fill="none" stroke="#2563EB" stroke-width="2.5"/>` : ''
+  return `
+    ${statusRing(statusColor)} ${ring}
+    <ellipse cx="24" cy="38" rx="10" ry="4.5" fill="rgba(0,0,0,0.22)"/>
+    <g opacity="${opacity}">
+      <path d="M24 4 C16.8 4 11 9.8 11 17 C11 27.2 24 42.5 24 42.5 C24 42.5 37 27.2 37 17 C37 9.8 31.2 4 24 4 Z"
+        fill="${statusColor}" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/>
+      <rect x="18" y="10" width="12" height="19" rx="2.4" fill="${WHITE}" stroke="${INK}" stroke-width="1.7"/>
+      <rect x="20" y="13" width="8" height="11.5" rx="1" fill="#DBEAFE"/>
+      <circle cx="24" cy="26.8" r="1.2" fill="${INK}"/>
+      <path d="M21 31.5 C21.8 30 22.8 29.2 24 29.2 C25.2 29.2 26.2 30 27 31.5"
+        fill="none" stroke="${WHITE}" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  `
+}
+
 function buildVehicleSvgBody(
   kind: VehicleIconKind,
   statusColor: string,
@@ -158,6 +183,7 @@ function buildVehicleSvgBody(
     truck: () => truckSvg(statusColor, opacity, selected),
     bus:   () => busSvg(statusColor, opacity, selected),
     moto:  () => motoSvg(statusColor, opacity, selected),
+    mobile: () => mobileSvg(statusColor, opacity, selected),
   }
   return builders[kind]()
 }
@@ -218,15 +244,17 @@ export function createVehicleIcon(opts: {
   selected: boolean
   label?: string
   vehicleType?: VehicleType | string | null
+  deviceSource?: DeviceSourceType | string | null
   ignition?: boolean
 }) {
-  const { color, heading, selected, label, vehicleType, ignition = true } = opts
+  const { color, heading, selected, label, vehicleType, deviceSource, ignition = true } = opts
   const size = selected ? 60 : 52
-  const kind = vehicleTypeToIconKind(vehicleType)
+  const kind = vehicleAssetToIconKind(vehicleType, deviceSource)
+  const markerHeading = kind === 'mobile' ? 0 : heading
 
   return L.divIcon({
     className: 'vehicle-marker-icon',
-    html: vehicleSvgMarkup({ kind, color, heading, size, label, showLabel: selected, ignition, selected }),
+    html: vehicleSvgMarkup({ kind, color, heading: markerHeading, size, label, showLabel: selected, ignition, selected }),
     iconSize: [size, size + (selected ? 22 : 0)],
     iconAnchor: [size / 2, size / 2],
   })
@@ -238,14 +266,15 @@ export function createGoogleVehicleIcon(opts: {
   heading: number
   selected: boolean
   vehicleType?: VehicleType | string | null
+  deviceSource?: DeviceSourceType | string | null
   ignition?: boolean
 }) {
   const size = opts.selected ? 60 : 52
-  const kind = vehicleTypeToIconKind(opts.vehicleType)
+  const kind = vehicleAssetToIconKind(opts.vehicleType, opts.deviceSource)
   const svg = vehicleSvgString(
     kind,
     opts.color,
-    opts.heading,
+    kind === 'mobile' ? 0 : opts.heading,
     size,
     opts.ignition ?? true,
     opts.selected,
@@ -264,14 +293,15 @@ export function createVehicleMarkerHtml(opts: {
   heading: number
   selected: boolean
   vehicleType?: VehicleType | string | null
+  deviceSource?: DeviceSourceType | string | null
   ignition?: boolean
 }) {
   const size = opts.selected ? 60 : 52
-  const kind = vehicleTypeToIconKind(opts.vehicleType)
+  const kind = vehicleAssetToIconKind(opts.vehicleType, opts.deviceSource)
   return vehicleSvgMarkup({
     kind,
     color: opts.color,
-    heading: opts.heading,
+    heading: kind === 'mobile' ? 0 : opts.heading,
     size,
     ignition: opts.ignition ?? true,
     selected: opts.selected,
