@@ -6,6 +6,7 @@ import { Bell, Download, LogOut, User, ChevronDown, Settings, Shield, Plus, Menu
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useAlertsRealtime } from '@/lib/context/alerts-realtime-context'
+import { PanicButton } from '@/components/mobile/panic-button'
 
 interface TopBarProps {
   profile: {
@@ -83,7 +84,7 @@ export function TopBar({ profile }: TopBarProps) {
       </div>
 
       {/* Right: notifications + user */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3">
         {isGeofencesPage && (
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-geofence-modal'))}
@@ -105,11 +106,12 @@ export function TopBar({ profile }: TopBarProps) {
           type="button"
           title="Actualizar app"
           onClick={() => window.location.reload()}
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
+          className="hidden sm:inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
         >
           <RefreshCw className="w-4 h-4" />
           <span className="hidden xl:inline">Actualizar app</span>
         </button>
+        <PanicButton />
         {/* Notifications bell */}
         <Link
           href="/alerts"

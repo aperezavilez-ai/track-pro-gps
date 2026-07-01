@@ -114,7 +114,7 @@ export default function TrackerScreen() {
       Alert.alert('SOS', 'Registra el dispositivo primero.')
       return
     }
-    Alert.alert('Emergencia SOS', '¿Enviar alerta de emergencia con tu ubicación?', [
+    Alert.alert('Boton de panico', '¿Enviar alerta SOS con tu ubicación?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Enviar SOS', style: 'destructive', onPress: async () => {
@@ -218,7 +218,7 @@ export default function TrackerScreen() {
 
       <TouchableOpacity style={styles.sosBtn} onPress={() => void handleSos()}>
         <Ionicons name="alert-circle" size={32} color="#fff" />
-        <Text style={styles.sosText}>SOS — Emergencia</Text>
+        <Text style={styles.sosText}>Boton de panico SOS</Text>
       </TouchableOpacity>
 
       <View style={styles.actions}>
