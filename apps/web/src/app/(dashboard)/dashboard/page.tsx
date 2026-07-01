@@ -30,7 +30,7 @@ async function getDashboardData(companyId: string) {
     .select(`
       vehicle_id, company_id, lat, lng, speed, heading,
       ignition, odometer, recorded_at,
-      vehicle:vehicles(economic_num, plates, brand, model, type, owner_name, group_id, device_id, driver:drivers(full_name), group:vehicle_groups(id, name, color))
+      vehicle:vehicles(economic_num, plates, brand, model, type, owner_name, group_id, device_id, driver:drivers(full_name), group:vehicle_groups(id, name, color), device:gps_devices(source_type, mobile_platform))
     `)
 
   let alertsQuery = supabase
@@ -78,7 +78,9 @@ async function getDashboardData(companyId: string) {
       device_id: string | null
       driver: { full_name: string } | null
       group: { id: string; name: string; color: string } | null
+      device: { source_type: string; mobile_platform: string | null } | { source_type: string; mobile_platform: string | null }[] | null
     } | null
+    const device = firstOrNull(v?.device)
 
     if (isOffline) noSignal++
     else if (!p.ignition) offline++
@@ -98,6 +100,8 @@ async function getDashboardData(companyId: string) {
       group_name:   v?.group?.name ?? null,
       owner_name:   v?.owner_name ?? null,
       driver_name:  v?.driver?.full_name ?? null,
+      device_source: (device?.source_type ?? 'hardware') as LiveVehicle['device_source'],
+      mobile_platform: (device?.mobile_platform ?? null) as LiveVehicle['mobile_platform'],
       device_status: isOffline ? 'no_signal' : p.ignition ? 'online' : 'offline',
       lat:          p.lat,  lng:      p.lng,
       speed:        p.speed, heading:  p.heading,
@@ -212,7 +216,7 @@ export default async function DashboardPage() {
 
       {/* Escritorio: mapa + panel lateral */}
       <div className="hidden lg:grid lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="order-1 lg:col-span-3 bg-gray-100 rounded-2xl overflow-hidden min-h-[520px] flex flex-col">
+        <div className="order-1 lg:col-span-3 bg-gray-100 rounded-2xl overflow-hidden h-[min(72dvh,760px)] min-h-[620px] flex flex-col">
           <MapFilters activeAlerts={stats.active_alerts} productivity={stats.productivity_today} />
           <Suspense fallback={
             <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
