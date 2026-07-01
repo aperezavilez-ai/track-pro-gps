@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Bell, Download, LogOut, User, ChevronDown, Settings, Shield, Plus, Menu, RefreshCw } from 'lucide-react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useAlertsRealtime } from '@/lib/context/alerts-realtime-context'
 
 interface TopBarProps {
   profile: {
@@ -30,7 +31,23 @@ export function TopBar({ profile }: TopBarProps) {
   const pathname = usePathname()
   const supabase = createSupabaseBrowserClient()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [activeAlerts, setActiveAlerts] = useState(0)
   const isGeofencesPage = pathname === '/geofences'
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/alerts?unacknowledged=true&per_page=1')
+      .then(r => r.json())
+      .then(json => {
+        if (!cancelled) setActiveAlerts(json.count ?? 0)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  useAlertsRealtime(() => {
+    setActiveAlerts(count => count + 1)
+  })
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -94,10 +111,19 @@ export function TopBar({ profile }: TopBarProps) {
           <span className="hidden xl:inline">Actualizar app</span>
         </button>
         {/* Notifications bell */}
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition text-gray-500">
+        <Link
+          href="/alerts"
+          title={activeAlerts > 0 ? `${activeAlerts} alertas activas` : 'Ver alertas'}
+          aria-label={activeAlerts > 0 ? `${activeAlerts} alertas activas` : 'Ver alertas'}
+          className="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition text-gray-500"
+        >
           <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+          {activeAlerts > 0 && (
+            <span className="absolute top-1 right-1 min-w-4 h-4 rounded-full bg-red-500 px-1 text-[10px] leading-4 text-white text-center font-semibold">
+              {activeAlerts > 9 ? '9+' : activeAlerts}
+            </span>
+          )}
+        </Link>
 
         {/* User menu */}
         <div className="relative">
